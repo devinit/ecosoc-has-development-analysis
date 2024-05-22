@@ -1,0 +1,5 @@
+# IATI
+\copy (select * from repo.iati_transactions where x_vocabulary_number=1 and reporting_org_secondary_reporter in ('0', 'false') and x_transaction_year>=2017 and x_transaction_year<=2024 and x_sector_vocabulary in ('1', '2', 'DAC', 'DAC-3') and x_recipient_code in ('CM', 'TD', 'CD', 'HT', 'HN', 'ML', 'MM', 'SD')) to '/tmp/ocha_iati_22052024.csv' csv header;
+
+# CRS
+\copy (select * from crs_current where year in (2017, 2018, 2019, 2020, 2021, 2022) and flow_name in ('Equity Investment', 'ODA Grants', 'ODA Loans') and recipient_iso3_code in ('CMR', 'TCD', 'COD', 'HTI', 'HND', 'MLI', 'MMR', 'SDN')) to 'crs_country_year_filtered.csv' csv header;

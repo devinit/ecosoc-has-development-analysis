@@ -103,3 +103,71 @@ ggplot(dat_recipient_agg_l, aes(x=label, y=value, group=variable, fill=variable)
     x="",
     fill=""
   )
+
+dat_global_trend = data.table(dat)[,.(
+  usd_disbursement_crs=sum(usd_disbursement_crs),
+  usd_disbursement_iati=sum(usd_disbursement_iati)
+),
+by=.(year, humanitarian)]
+
+dat_global_trend_l = melt(dat_global_trend, id.vars=c("year", "humanitarian"))
+dat_global_trend_m = dcast(dat_global_trend_l, year~humanitarian+variable)
+dat_global_trend_m$crs_hum_dev_ratio = 
+  dat_global_trend_m$Humanitarian_usd_disbursement_crs /
+  dat_global_trend_m$Development_usd_disbursement_crs
+
+dat_global_trend_m$iati_hum_dev_ratio = 
+  dat_global_trend_m$Humanitarian_usd_disbursement_iati /
+  dat_global_trend_m$Development_usd_disbursement_iati
+
+dat_global_trend_plot = melt(dat_global_trend_m, id.vars=c("year"), measure.vars=c("crs_hum_dev_ratio", "iati_hum_dev_ratio"))
+dat_global_trend_plot$variable = as.character(dat_global_trend_plot$variable)
+dat_global_trend_plot$variable[which(dat_global_trend_plot$variable=="crs_hum_dev_ratio")] = "CRS"
+dat_global_trend_plot$variable[which(dat_global_trend_plot$variable=="iati_hum_dev_ratio")] = "IATI"
+
+ggplot(dat_global_trend_plot, aes(x=year, y=value, color=variable, group=variable)) +
+  geom_line() +
+  scale_color_manual(values=reds) + # Choose colour here
+  scale_y_continuous(expand = c(0, 0), labels=percent) + # Force y-grid to start at x-axis
+  expand_limits(y=c(0, max(dat_global_trend_plot$value*1.1))) +
+  di_style +
+  labs(
+    color="",
+    x="",
+    y="Humanitarian to development ratio (%)"
+  )
+
+
+dat_country_trend = data.table(dat)[,.(
+  usd_disbursement_crs=sum(usd_disbursement_crs),
+  usd_disbursement_iati=sum(usd_disbursement_iati)
+),
+by=.(year, humanitarian, recipient_name)]
+
+dat_country_trend_l = melt(dat_country_trend, id.vars=c("year", "humanitarian", "recipient_name"))
+dat_country_trend_m = dcast(dat_country_trend_l, year+recipient_name~humanitarian+variable)
+dat_country_trend_m$crs_hum_dev_ratio = 
+  dat_country_trend_m$Humanitarian_usd_disbursement_crs /
+  dat_country_trend_m$Development_usd_disbursement_crs
+
+dat_country_trend_m$iati_hum_dev_ratio = 
+  dat_country_trend_m$Humanitarian_usd_disbursement_iati /
+  dat_country_trend_m$Development_usd_disbursement_iati
+
+dat_country_trend_plot = melt(dat_country_trend_m, id.vars=c("year", "recipient_name"), measure.vars=c("crs_hum_dev_ratio", "iati_hum_dev_ratio"))
+dat_country_trend_plot$variable = as.character(dat_country_trend_plot$variable)
+dat_country_trend_plot$variable[which(dat_country_trend_plot$variable=="crs_hum_dev_ratio")] = "CRS"
+dat_country_trend_plot$variable[which(dat_country_trend_plot$variable=="iati_hum_dev_ratio")] = "IATI"
+
+ggplot(dat_country_trend_plot, aes(x=year, y=value, color=variable, group=variable)) +
+  geom_line() +
+  scale_color_manual(values=reds) + # Choose colour here
+  scale_y_continuous(expand = c(0, 0), labels=percent) + # Force y-grid to start at x-axis
+  expand_limits(y=c(0, max(dat_country_trend_plot$value*1.1))) +
+  facet_wrap(~recipient_name) +
+  di_style +
+  labs(
+    color="",
+    x="",
+    y="Humanitarian to development ratio (%)"
+  )

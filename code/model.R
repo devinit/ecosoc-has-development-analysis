@@ -7,6 +7,10 @@ lapply(list.of.packages, require, character.only=T)
 wd <- dirname(getActiveDocumentContext()$path) 
 setwd(wd)
 setwd("../")
+
+rmse = function(vec1, vec2){
+  sqrt(mean((vec1 - vec2)^2))
+}
 #### End setup ####
 
 dat = fread("data/merged_crs_iati.csv")
@@ -33,11 +37,26 @@ dat_test$usd_disbursement_iati_lwr = confidence[,2]
 dat_test$usd_disbursement_iati_upr = confidence[,3]
 plot(usd_disbursement_crs~usd_disbursement_iati, data=dat_test)
 abline(0,1)
-original_rmse = sqrt(mean((dat_test$usd_disbursement_crs - dat_test$usd_disbursement_iati)^2))
+original_rmse = rmse(dat_test$usd_disbursement_crs, dat_test$usd_disbursement_iati)
 original_rmse
 plot(usd_disbursement_crs~usd_disbursement_iati_fit, data=dat_test)
 abline(0,1)
-fit_rmse = sqrt(mean((dat_test$usd_disbursement_crs - dat_test$usd_disbursement_iati_fit)^2))
+fit_rmse = rmse(dat_test$usd_disbursement_crs, dat_test$usd_disbursement_iati_fit)
+fit_rmse
+
+dat_test_agg = dat_test[,.(
+  usd_disbursement_crs=sum(usd_disbursement_crs),
+  usd_disbursement_iati=sum(usd_disbursement_iati),
+  usd_disbursement_iati_fit=sum(usd_disbursement_iati_fit)
+),
+by=.(year, humanitarian, recipient_name)]
+plot(usd_disbursement_crs~usd_disbursement_iati, data=dat_test_agg)
+abline(0,1)
+original_rmse = rmse(dat_test_agg$usd_disbursement_crs, dat_test_agg$usd_disbursement_iati)
+original_rmse
+plot(usd_disbursement_crs~usd_disbursement_iati_fit, data=dat_test_agg)
+abline(0,1)
+fit_rmse = rmse(dat_test_agg$usd_disbursement_crs, dat_test_agg$usd_disbursement_iati_fit)
 fit_rmse
 
 

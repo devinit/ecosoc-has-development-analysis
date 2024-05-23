@@ -14,7 +14,6 @@ rmse = function(vec1, vec2){
 #### End setup ####
 
 dat = fread("data/merged_crs_iati.csv")
-dat = subset(dat, !is.na(sector_code))
 dat$humanitarian = ifelse(
   dat$sector_code %in% c(720, 730, 740),
   "Humanitarian",
@@ -34,9 +33,7 @@ dat$delta_iati_crs = (dat$usd_disbursement_crs_t1 - dat$usd_disbursement_iati_t1
 
 # Division by zero
 dat$delta_iati[which(is.infinite(dat$delta_iati))] = 0
-dat$delta_iati_crs[which(is.infinite(dat$delta_iati_crs))] = 0
 dat$delta_iati[which(is.nan(dat$delta_iati))] = 0
-dat$delta_iati_crs[which(is.nan(dat$delta_iati_crs))] = 0
 
 dat_train = subset(dat, year < 2022)
 dat_test = subset(dat, year == 2022)
@@ -47,8 +44,7 @@ fit = lm(
     usd_disbursement_iati+ # plus beta0 * IATI this year
     usd_disbursement_crs_t1+ # plus beta1 * CRS last year
     delta_iati+ # plus beta2 * the absolute change in IATI from last year
-    delta_iati_crs+ # plus beta3 * the absolute difference between CRS last year and IATI last year
-    humanitarian # plus beta4 * humanitarian
+    humanitarian # plus beta3 * humanitarian
     , data=dat_train)
 summary(fit)
 confidence = predict.lm(fit, newdata = dat_test, interval = "confidence")
@@ -73,8 +69,7 @@ fit = lm(
     usd_disbursement_iati+ # plus beta0 * IATI this year
     usd_disbursement_crs_t1+ # plus beta1 * CRS last year
     delta_iati+ # plus beta2 * the absolute change in IATI from last year
-    delta_iati_crs+ # plus beta3 * the absolute difference between CRS last year and IATI last year
-    humanitarian # plus beta4 * humanitarian
+    humanitarian # plus beta3 * humanitarian
   , data=dat_train)
 summary(fit)
 confidence = predict.lm(fit, newdata = dat_predict, interval = "confidence")

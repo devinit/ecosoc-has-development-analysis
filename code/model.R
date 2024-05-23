@@ -47,7 +47,7 @@ fit = lm(
     usd_disbursement_iati+ # plus beta0 * IATI this year
     usd_disbursement_crs_t1+ # plus beta1 * CRS last year
     delta_iati+ # plus beta2 * the absolute change in IATI from last year
-    delta_iati_crs+ # plus beta3 * the absolute difference between CRS last year and IATI this year
+    delta_iati_crs+ # plus beta3 * the absolute difference between CRS last year and IATI last year
     humanitarian # plus beta4 * humanitarian
     , data=dat_train)
 summary(fit)
@@ -73,7 +73,7 @@ fit = lm(
     usd_disbursement_iati+ # plus beta0 * IATI this year
     usd_disbursement_crs_t1+ # plus beta1 * CRS last year
     delta_iati+ # plus beta2 * the absolute change in IATI from last year
-    delta_iati_crs+ # plus beta3 * the absolute difference between CRS last year and IATI this year
+    delta_iati_crs+ # plus beta3 * the absolute difference between CRS last year and IATI last year
     humanitarian # plus beta4 * humanitarian
   , data=dat_train)
 summary(fit)

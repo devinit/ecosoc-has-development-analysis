@@ -9,7 +9,7 @@ setwd(wd)
 setwd("../")
 
 rmse = function(vec1, vec2){
-  sqrt(mean((vec1 - vec2)^2))
+  sqrt(mean((vec1 - vec2)^2, na.rm=T))
 }
 #### End setup ####
 
@@ -24,12 +24,32 @@ dat = dat[,.(
   usd_disbursement_crs=sum(usd_disbursement_crs),
   usd_disbursement_iati=sum(usd_disbursement_iati)
 ),
-by=.(year, humanitarian, recipient_name, sector_code)]
+by=.(year, humanitarian, recipient_name)]
+dat = dat[order(dat$recipient_name, dat$humanitarian, dat$year)]
+dat[,"usd_disbursement_crs_t1":=shift(usd_disbursement_crs),by=.(recipient_name, humanitarian)]
+dat[,"usd_disbursement_iati_t1":=shift(usd_disbursement_iati),by=.(recipient_name, humanitarian)]
+
+dat$delta_iati = (dat$usd_disbursement_iati - dat$usd_disbursement_iati_t1) 
+dat$delta_iati_crs = (dat$usd_disbursement_crs_t1 - dat$usd_disbursement_iati_t1) 
+
+# Division by zero
+dat$delta_iati[which(is.infinite(dat$delta_iati))] = 0
+dat$delta_iati_crs[which(is.infinite(dat$delta_iati_crs))] = 0
+dat$delta_iati[which(is.nan(dat$delta_iati))] = 0
+dat$delta_iati_crs[which(is.nan(dat$delta_iati_crs))] = 0
 
 dat_train = subset(dat, year < 2022)
 dat_test = subset(dat, year == 2022)
 
-fit = lm(usd_disbursement_crs~0+usd_disbursement_iati+recipient_name+sector_code, data=dat_train)
+fit = lm(
+  usd_disbursement_crs~ # CRS this year is a function of
+    # Constant alpha
+    usd_disbursement_iati+ # plus beta0 * IATI this year
+    usd_disbursement_crs_t1+ # plus beta1 * CRS last year
+    delta_iati+ # plus beta2 * the absolute change in IATI from last year
+    delta_iati_crs+ # plus beta3 * the absolute difference between CRS last year and IATI this year
+    humanitarian # plus beta4 * humanitarian
+    , data=dat_train)
 summary(fit)
 confidence = predict.lm(fit, newdata = dat_test, interval = "confidence")
 dat_test$usd_disbursement_iati_fit = confidence[,1]
@@ -44,25 +64,18 @@ abline(0,1)
 fit_rmse = rmse(dat_test$usd_disbursement_crs, dat_test$usd_disbursement_iati_fit)
 fit_rmse
 
-dat_test_agg = dat_test[,.(
-  usd_disbursement_crs=sum(usd_disbursement_crs),
-  usd_disbursement_iati=sum(usd_disbursement_iati),
-  usd_disbursement_iati_fit=sum(usd_disbursement_iati_fit)
-),
-by=.(year, humanitarian, recipient_name)]
-plot(usd_disbursement_crs~usd_disbursement_iati, data=dat_test_agg)
-abline(0,1)
-original_rmse = rmse(dat_test_agg$usd_disbursement_crs, dat_test_agg$usd_disbursement_iati)
-original_rmse
-plot(usd_disbursement_crs~usd_disbursement_iati_fit, data=dat_test_agg)
-abline(0,1)
-fit_rmse = rmse(dat_test_agg$usd_disbursement_crs, dat_test_agg$usd_disbursement_iati_fit)
-fit_rmse
-
 
 dat_train = subset(dat, year < 2023)
 dat_predict = subset(dat, year < 2024)
-fit = lm(usd_disbursement_crs~0+usd_disbursement_iati+recipient_name+sector_code, data=dat_train)
+fit = lm(
+  usd_disbursement_crs~ # CRS this year is a function of
+    # Constant alpha
+    usd_disbursement_iati+ # plus beta0 * IATI this year
+    usd_disbursement_crs_t1+ # plus beta1 * CRS last year
+    delta_iati+ # plus beta2 * the absolute change in IATI from last year
+    delta_iati_crs+ # plus beta3 * the absolute difference between CRS last year and IATI this year
+    humanitarian # plus beta4 * humanitarian
+  , data=dat_train)
 summary(fit)
 confidence = predict.lm(fit, newdata = dat_predict, interval = "confidence")
 dat_predict$usd_disbursement_crs_fit = confidence[,1]

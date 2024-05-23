@@ -74,14 +74,7 @@ ggplot(subset(dat, year < 2023), aes(ymin=usd_disbursement_crs_lwr, ymax=usd_dis
     color=""
   )
 
-dat_recipient_agg = data.table(dat)[,.(
-  usd_disbursement_crs=sum(usd_disbursement_crs)
-),
-by=.(humanitarian, recipient_name, year)]
-
-dat_recipient_agg = dat_recipient_agg[order(dat_recipient_agg$recipient_name),]
-
-ggplot(dat_recipient_agg, aes(x=year, y=usd_disbursement_crs, group=humanitarian, fill=humanitarian)) +
+ggplot(dat, aes(x=year, y=usd_disbursement_crs, group=humanitarian, fill=humanitarian)) +
   geom_bar(stat="identity", position="dodge") + 
   scale_fill_manual(values=reds) + # Choose colour here
   scale_x_continuous(n.breaks=7) +
@@ -95,18 +88,13 @@ ggplot(dat_recipient_agg, aes(x=year, y=usd_disbursement_crs, group=humanitarian
     fill=""
   )
 
-dat_recipient_agg = data.table(dat)[,.(
-  usd_disbursement_crs=sum(usd_disbursement_crs)
-),
-by=.(humanitarian, recipient_name, year)]
+dat_w = dcast(dat, recipient_name+year~humanitarian, value.var="usd_disbursement_crs")
+dat_w$total = dat_w$Development + dat_w$Humanitarian
+dat_w$Development = dat_w$Development / dat_w$total
+dat_w$Humanitarian = dat_w$Humanitarian / dat_w$total
+dat_l = melt(dat_w, id.vars=c("recipient_name", "year"), measure.vars=c("Development", "Humanitarian"))
 
-dat_recipient_agg_w = dcast(dat_recipient_agg, recipient_name+year~humanitarian, value.var="usd_disbursement_crs")
-dat_recipient_agg_w$total = dat_recipient_agg_w$Development + dat_recipient_agg_w$Humanitarian
-dat_recipient_agg_w$Development = dat_recipient_agg_w$Development / dat_recipient_agg_w$total
-dat_recipient_agg_w$Humanitarian = dat_recipient_agg_w$Humanitarian / dat_recipient_agg_w$total
-dat_recipient_agg_l = melt(dat_recipient_agg_w, id.vars=c("recipient_name", "year"), measure.vars=c("Development", "Humanitarian"))
-
-ggplot(dat_recipient_agg_l, aes(x=year, y=value, group=variable, fill=variable)) +
+ggplot(dat_l, aes(x=year, y=value, group=variable, fill=variable)) +
   geom_bar(stat="identity") + 
   scale_fill_manual(values=reds) + # Choose colour here
   scale_x_continuous(n.breaks=7) +

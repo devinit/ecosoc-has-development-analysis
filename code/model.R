@@ -29,11 +29,6 @@ dat[,"usd_disbursement_crs_t1":=shift(usd_disbursement_crs),by=.(recipient_name,
 dat[,"usd_disbursement_iati_t1":=shift(usd_disbursement_iati),by=.(recipient_name, humanitarian)]
 
 dat$delta_iati = (dat$usd_disbursement_iati - dat$usd_disbursement_iati_t1) 
-dat$delta_iati_crs = (dat$usd_disbursement_crs_t1 - dat$usd_disbursement_iati_t1) 
-
-# Division by zero
-dat$delta_iati[which(is.infinite(dat$delta_iati))] = 0
-dat$delta_iati[which(is.nan(dat$delta_iati))] = 0
 
 dat_train = subset(dat, year < 2022)
 dat_test = subset(dat, year == 2022)
